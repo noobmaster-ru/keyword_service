@@ -5,15 +5,14 @@ from itertools import islice
 from aiogram import Bot, Dispatcher, types
 from aiogram.types import Message
 from aiogram.filters import CommandStart
-from aiogram.enums import ParseMode
+
 from aiogram import F
-from aiogram.utils.markdown import hlink
+
 import logging
 
 import time
 from parse_module import main as parse_main 
-
-BOT_TOKEN = "8406611464:AAGSe9Sl8x71XFS7e1UDMUsYb4EtPtXNAc0"
+from dotenv import load_dotenv
 
 async def main():
     bot = Bot(token=BOT_TOKEN)
@@ -58,5 +57,7 @@ async def main():
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
+    load_dotenv()
+    BOT_TOKEN = os.getenv("TG_BOT_TOKEN")
     import asyncio
     asyncio.run(main())
