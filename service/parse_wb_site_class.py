@@ -122,6 +122,7 @@ class ParseWbSiteClass:
                 "page": int(page_number),
                 "link": f"https://www.wildberries.ru/catalog/{nm_id}/detail.aspx",
                 "name": product.get("name"),
+                "remains": product["wh"]
             }
         except Exception:
             return None

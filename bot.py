@@ -3,7 +3,6 @@ import asyncio
 import logging
 import time
 from dotenv import load_dotenv
-from itertools import islice
 from aiogram import F
 from aiogram import Bot, Dispatcher, types
 from aiogram.types import Message
@@ -37,10 +36,9 @@ async def main():
             result = await parse_main(query)
             exec_time = time.time() - start
             print("exec_time parse_main = ", exec_time)
-            first_five = dict(islice(result.items(), 5))
 
-            reply = "\u2705 Топ-5 товаров по запросу:\n"
-            for nm_id, data in first_five.items():
+            reply = "\u2705 Топ-20 товаров по запросу:\n"
+            for nm_id, data in result.items():
                 url = data["link"]
                 text = data["name"]
                 resp = f'<a href="{url}">{text}</a>'
@@ -51,6 +49,7 @@ async def main():
                     f"Органическая позиция: {data['organic_position']}\n"
                     f"Промо позиция: {data['promo_position']}\n"
                     f"Страница в поиске: {data['page']}\n"
+                    f"Остатки (по всей карточке): {data['remains']}\n"
                 )
             reply += f"\nВремя обработки: {exec_time:.2f} сек\n"
             await message.answer(reply, parse_mode="HTML")
