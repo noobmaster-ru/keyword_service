@@ -20,27 +20,28 @@ async def main():
 
     @dp.message(CommandStart())
     async def start(message: Message):
-        await message.answer("Привет! Отправь мне поисковый запрос и я верну топ-5 товаров с Wildberries.")
+        await message.answer("Привет! Отправь мне поисковый запрос и я верну топ-5 товаров с Wildberries по органическим позициям.")
 
     @dp.message(F.text)
     async def handle_query(message: types.Message):
         query = message.text.strip()
         print("receive message:",query)
-
-        # Чистим старую папку и создаем новую
-        if os.path.exists("results"):
-            shutil.rmtree("results")
-        os.makedirs("results", exist_ok=True)
+        
+        await message.answer(f"🔍 Получена ключевая фраза: <b>{query}</b>\nПожалуйста, подождите, идёт обработка...\n(примерное время обработки ~ 40 секунд)", parse_mode="HTML")
+        
+        # # Чистим старую папку и создаем новую
+        # if os.path.exists("results"):
+        #     shutil.rmtree("results")
+        # os.makedirs("results", exist_ok=True)
 
         try:
             start = time.time()
-            result = parse_main(query)
+            result = await parse_main(query)
             print("exec_time parse_main = ",time.time() - start)
             first_five = dict(islice(result.items(), 5))
 
             reply = "\u2705 Топ-5 товаров по запросу:\n"
             for nm_id, data in first_five.items():
-                # text = hlink(data["name"], data["link"])
                 url = data["link"]
                 text = data["name"]
                 resp = f'<a href="{url}">{text}</a>'
@@ -48,6 +49,7 @@ async def main():
                         f"{data['price']}₽\n"
                         f"{data['nmReviewRating']} ({data['nmFeedbacks']} отзывов) \n"
                         f"Органическая позиция: {data['organic_position']}\n"
+                        f"Страница в поиске: {data['page']}\n"
                 )
 
             await message.answer(reply, parse_mode="HTML")
