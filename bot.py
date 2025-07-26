@@ -29,15 +29,11 @@ async def main():
         
         await message.answer(f"🔍 Получена ключевая фраза: <b>{query}</b>\nПожалуйста, подождите, идёт обработка...\n(примерное время обработки ~ 40 секунд)", parse_mode="HTML")
         
-        # # Чистим старую папку и создаем новую
-        # if os.path.exists("results"):
-        #     shutil.rmtree("results")
-        # os.makedirs("results", exist_ok=True)
-
         try:
             start = time.time()
             result = await parse_main(query)
-            print("exec_time parse_main = ",time.time() - start)
+            exec_time = time.time() - start
+            print("exec_time parse_main = ",exec_time)
             first_five = dict(islice(result.items(), 5))
 
             reply = "\u2705 Топ-5 товаров по запросу:\n"
@@ -46,12 +42,12 @@ async def main():
                 text = data["name"]
                 resp = f'<a href="{url}">{text}</a>'
                 reply += (f"\n{resp}\n"
-                        f"{data['price']}₽\n"
+                        f"{data['price']}₽ (СПП = 30%)\n"
                         f"{data['nmReviewRating']} ({data['nmFeedbacks']} отзывов) \n"
                         f"Органическая позиция: {data['organic_position']}\n"
                         f"Страница в поиске: {data['page']}\n"
                 )
-
+            reply += f"\n время выполнения {exec_time}\n"
             await message.answer(reply, parse_mode="HTML")
         except Exception as e:
             await message.answer("\u274C Произошла ошибка при обработке запроса.")
