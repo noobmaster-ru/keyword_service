@@ -1,6 +1,7 @@
 import aiohttp
 import math
-
+import asyncio
+import random 
 
 class ParseWbSiteClass:
     def __init__(self, SEMAPHORE):
@@ -19,10 +20,20 @@ class ParseWbSiteClass:
                     "lang": "ru",
                     "nm": nm_id,
                 }
+                await asyncio.sleep(random.uniform(0.5, 1.5))  # перед запросом
                 async with session.get(
                     "https://card.wb.ru/cards/v4/detail", params=params
                 ) as resp:
-                    data = await resp.json()
+                    if resp.content_type != "application/json":
+                        text = await resp.text()
+                        print("⚠️ НЕ JSON:", text[:500])  # чтобы увидеть, что пришло от WB
+                        return {}
+
+                    try:
+                        data = await resp.json()
+                    except Exception as e:
+                        print(f"Ошибка при JSON-декодировании: {e}")
+                        return {}
                     return data["products"][0]["sizes"][0]["price"]["product"]
             except Exception:
                 return "Нет в наличии"
@@ -48,29 +59,37 @@ class ParseWbSiteClass:
                     "sec-fetch-site": "same-site",
                     "user-agent": "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Mobile Safari/537.36",
                 }
+                await asyncio.sleep(random.uniform(0.5, 1.5))  # перед запросом
                 async with session.get(
                     "https://user-grade.wildberries.ru/api/v5/grade",
                     params=params,
                     headers=headers,
                 ) as resp:
-                    data = await resp.json()
+                    if resp.content_type != "application/json":
+                        text = await resp.text()
+                        print("⚠️ НЕ JSON:", text[:500])  # чтобы увидеть, что пришло от WB
+                        return {}
+
+                    try:
+                        data = await resp.json()
+                    except Exception as e:
+                        print(f"Ошибка при JSON-декодировании: {e}")
+                        return {}
                     return data["payload"]["payments"][0]["full_discount"]
             except Exception:
                 return "Нет в наличии"
 
     async def fetch_price(
-        self, session: aiohttp.ClientSession, nm_id: str, parsed_data_api_articles: dict
+        self, session: aiohttp.ClientSession, nm_id: str
     ) -> dict:
         full_discount = await self.parse_grade(session, nm_id)
         price = await self.parse_card(session, nm_id)
 
         if isinstance(full_discount, int) and isinstance(price, int):
             wallet_price = math.floor((price / 100) * (1 - full_discount / 100))
-            parsed_data_api_articles[nm_id]["wb_wallet_price"] = str(wallet_price)
-            return parsed_data_api_articles
+            return wallet_price
         else:
-            parsed_data_api_articles[nm_id]["wb_wallet_price"] = "Нет в наличии"
-            return parsed_data_api_articles
+            return "Нет в наличии"
     
     async def parse_promo_position_first_page(
         self, session: aiohttp.ClientSession, query: str, articles: dict
@@ -111,14 +130,27 @@ class ParseWbSiteClass:
                 'uiv': '0',
                 'uv': 'AQUAAQICAAEDAAoBAAIEAAMACco_P3C5Oj88vsc-50gRrVPE9ryaxvfC9jz0t064r0OtuGY9NbbFQalJlcWKslDEwzxJtPhDoMp4wxzE3rpWwR3FTkNfQ2Y1Wb01uv3EvMCEwAlI-EGcvSy_278bR_dCx8T3RdpEobiRSBZAWkL4P6I4AUHMRga8GDpzwwO9a8etQblEcD3IR1lEXL2HSVOxoa6APqfAlb7RxAa_UUeBQwvIDsKBwZXB1UAJRAnIHjgDN9hGuMa8QFpDbbxTwK_FNsEsvv0yjki2Qz5FbL11v6s55D49rnjGQ8elwZm0RkXov2NBiUB2OAI_C73EwRXEQcTgtNzBAr9IvOTBuESlRUoAN-wu-DKnMMEpEjTzAUge',
             }
-
+            await asyncio.sleep(random.uniform(0.5, 1.5))  # перед запросом
             async with session.get(
                 'https://search.wb.ru/exactmatch/ru/common/v14/search',
                 params=params, 
                 headers=headers
             ) as response:
-                data = await response.json()
-                products = data.get("products")
+                if response.content_type != "application/json":
+                    text = await response.text()
+                    print("⚠️ НЕ JSON:", text[:500])  # чтобы увидеть, что пришло от WB
+                    return {}
+
+                try:
+                    data = await response.json()
+                except Exception as e:
+                    print(f"Ошибка при JSON-декодировании: {e}")
+                    return {}
+                
+                products = data.get("products", [])
+                if not products:
+                    print("⚠️ Нет products в ответе от WB")
+                    return articles
                 promo_position = 0
                 for product in products:
                     try:
@@ -126,6 +158,10 @@ class ParseWbSiteClass:
                         articles[product["id"]] = {
                             "organic_position": log["position"],
                             "promo_position": log["promoPosition"],
+                            "wb_wallet_price": await self.fetch_price(session, product["id"]),
+                            "number_feedbacks": product["nmFeedbacks"],
+                            "nmReviewRating": product["nmReviewRating"],
+                            "name": product["name"],
                             "page": 1
                         }
                     except Exception as e:
@@ -133,6 +169,10 @@ class ParseWbSiteClass:
                         articles[product["id"]] ={
                             "organic_position": None,
                             "promo_position": promo_position,
+                            "wb_wallet_price": await self.fetch_price(session, product["id"]),
+                            "number_feedbacks": product["nmFeedbacks"],
+                            "nmReviewRating": product["nmReviewRating"],
+                            "name": product["name"],
                             "page": 1
                         }
                     promo_position += 1
@@ -177,27 +217,38 @@ class ParseWbSiteClass:
             'uv': 'AQUAAQICAAEDAAoBAAIEAAMACco_P3C5Oj88vsc-50gRrVPE9ryaxvfC9jz0t064r0OtuGY9NbbFQalJlcWKslDEwzxJtPhDoMp4wxzE3rpWwR3FTkNfQ2Y1Wb01uv3EvMCEwAlI-EGcvSy_278bR_dCx8T3RdpEobiRSBZAWkL4P6I4AUHMRga8GDpzwwO9a8etQblEcD3IR1lEXL2HSVOxoa6APqfAlb7RxAa_UUeBQwvIDsKBwZXB1UAJRAnIHjgDN9hGuMa8QFpDbbxTwK_FNsEsvv0yjki2Qz5FbL11v6s55D49rnjGQ8elwZm0RkXov2NBiUB2OAI_C73EwRXEQcTgtNzBAr9IvOTBuESlRUoAN-wu-DKnMMEpEjTzAUge',
         }
         async with self.SEMAPHORE:
+            await asyncio.sleep(random.uniform(0.5, 1.5))  # перед запросом
             async with session.get(
-                    'https://search.wb.ru/exactmatch/ru/common/v14/search',
-                    params=params,
-                    headers=headers,
+                'https://search.wb.ru/exactmatch/ru/common/v14/search',
+                params=params,
+                headers=headers,
             ) as response:
-                data = await response.json()
-                products = data.get("products")
+                if response.content_type != "application/json":
+                    text = await response.text()
+                    print("⚠️ НЕ JSON:", text[:500])  # чтобы увидеть, что пришло от WB
+                    return {}
+
+                try:
+                    data = await response.json()
+                except Exception as e:
+                    print(f"Ошибка при JSON-декодировании: {e}")
+                    return {}
+                products = data.get("products", [])
+                if not products:
+                    print("⚠️ Нет products в ответе от WB")
+                    return articles
                 promo_position = 0
 
-                page = {}
                 for product in products:
                     try:
                         log = product["log"]
                         articles[product["id"]] = {
                             "organic_position": log["position"],
                             "promo_position": log["promoPosition"],
-                            "page": int(page_number)
-                        }
-                        page[product["id"]] = {
-                            "organic_position": log["position"],
-                            "promo_position": log["promoPosition"],
+                            "wb_wallet_price": await self.fetch_price(session, product["id"]),
+                            "number_feedbacks": product["nmFeedbacks"],
+                            "nmReviewRating": product["nmReviewRating"],
+                            "name": product["name"],
                             "page": int(page_number)
                         }
                     except Exception as e:
@@ -205,11 +256,10 @@ class ParseWbSiteClass:
                         articles[product["id"]] ={
                             "organic_position": None,
                             "promo_position": promo_position,
-                            "page": int(page_number)
-                        }
-                        page[product["id"]] = {
-                            "organic_position": None,
-                            "promo_position": promo_position,
+                            "wb_wallet_price": await self.fetch_price(session, product["id"]),
+                            "number_feedbacks": product["nmFeedbacks"],
+                            "nmReviewRating": product["nmReviewRating"],
+                            "name": product["name"],
                             "page": int(page_number)
                         }
                     promo_position += 1
