@@ -113,7 +113,7 @@ class ParseWbSiteClass:
             price = await self.fetch_price(session, nm_id)
 
             return {
-                "id": product["id"],
+                "nm_id": product["id"],
                 "organic_position": organic_pos,
                 "promo_position": promo_pos,
                 "price": price,
@@ -122,7 +122,7 @@ class ParseWbSiteClass:
                 "page": int(page_number),
                 "link": f"https://www.wildberries.ru/catalog/{nm_id}/detail.aspx",
                 "name": product.get("name"),
-                "remains": product["wh"]
+                "remains": product["totalQuantity"]
             }
         except Exception:
             return None
@@ -159,7 +159,7 @@ class ParseWbSiteClass:
                         )
                         promo_position += 1
                     results = await asyncio.gather(*tasks)
-                    articles.update({item["id"]: item for item in results if item})
+                    articles.update({item["nm_id"]: item for item in results if item})
             except Exception as e:
                 print(f"Eror in parse_first_page , {str(e)[:300]}")
                 return {}
@@ -202,7 +202,7 @@ class ParseWbSiteClass:
                         )
                         promo_position += 1
                     results = await asyncio.gather(*tasks)
-                    articles.update({item["id"]: item for item in results if item})
+                    articles.update({item["nm_id"]: item for item in results if item})
             except Exception as e:
                 print(f"Error in parse_page_number_ {str(e)[:300]}")
                 return {}
