@@ -218,7 +218,8 @@ class ParseWbSiteClass:
             tasks.append(self.download_photo(session, articles[key], index))
 
         await asyncio.gather(*tasks)
-
+    
+    # основу кода функции взял с https://github.com/Duff89/wildberries_parser/blob/master/parser.py
     async def download_photo(self, session: aiohttp.ClientSession, article: dict, index: int):
         async with self.SEMAPHORE:
             try:
@@ -293,81 +294,3 @@ class ParseWbSiteClass:
                         print(f"⚠️ Failed to download {nm_id}, status: {response.status} , text = {response.content}")
             except Exception as e:
                 print(f"❌ Error downloading photo for {article.get('nm_id')}: {e}")
-    # # код функции взял с https://github.com/Duff89/wildberries_parser/blob/master/parser.py
-    # async def parse_photos(self, session: aiohttp.ClientSession, articles: dict):
-    #     async with self.SEMAPHORE:
-    #         try:
-    #             for index, key in enumerate(articles):
-    #             # for nm_id, article in articles.items():
-    #                 short_nm_id = articles[key]["nm_id"] // 100000
-    #                 """Используем match/case для определения basket на основе _short_id
-    #                 в network:  banners.js -> Response
-    #                 """
-    #                 if 0 <= short_nm_id <= 143:
-    #                     basket = '01'
-    #                 elif 144 <= short_nm_id <= 287:
-    #                     basket = '02'
-    #                 elif 288 <= short_nm_id <= 431:
-    #                     basket = '03'
-    #                 elif 432 <= short_nm_id <= 719:
-    #                     basket = '04'
-    #                 elif 720 <= short_nm_id <= 1007:
-    #                     basket = '05'
-    #                 elif 1008 <= short_nm_id <= 1061:
-    #                     basket = '06'
-    #                 elif 1062 <= short_nm_id <= 1115:
-    #                     basket = '07'
-    #                 elif 1116 <= short_nm_id <= 1169:
-    #                     basket = '08'
-    #                 elif 1170 <= short_nm_id <= 1313:
-    #                     basket = '09'
-    #                 elif 1314 <= short_nm_id <= 1601:
-    #                     basket = '10'
-    #                 elif 1602 <= short_nm_id <= 1655:
-    #                     basket = '11'
-    #                 elif 1656 <= short_nm_id <= 1919:
-    #                     basket = '12'
-    #                 elif 1920 <= short_nm_id <= 2045:
-    #                     basket = '13'
-    #                 elif 2046 <= short_nm_id <= 2189:
-    #                     basket = '14'
-    #                 elif 2190 <= short_nm_id <= 2405:
-    #                     basket = '15'
-    #                 # здесь вб добавил новые basket - пришло добавить (см в network:  banners.js -> Response)
-    #                 elif 2406 <= short_nm_id <= 2621:
-    #                     basket = '16'
-    #                 elif 2622 <= short_nm_id <= 2837:
-    #                     basket = '17'
-    #                 elif 2838 <= short_nm_id <= 3053:
-    #                     basket = '18'
-    #                 elif 3054 <= short_nm_id <= 3269:
-    #                     basket = '19'
-    #                 elif 3270 <= short_nm_id <= 3485:
-    #                     basket = '20'
-    #                 elif 3486 <= short_nm_id <= 3701:
-    #                     basket = '21'
-    #                 elif 3702 <= short_nm_id <= 3917:
-    #                     basket = '22'
-    #                 elif 3918 <= short_nm_id <= 4133:
-    #                     basket = '23'
-    #                 elif 4134 <= short_nm_id <= 4349:
-    #                     basket = '24'
-    #                 elif 4350 <= short_nm_id <= 4565: 
-    #                     basket = '25'
-    #                 else:
-    #                     basket = '26'
-
-    #                 # for i in range(1, article["number_of_images"] + 1): - спарсить все фото
-    #                 url_link_to_photo =  f"https://basket-{basket}.wbbasket.ru/vol{short_nm_id}/part{ articles[key]["nm_id"] // 1000}/{articles[key]["nm_id"]}/images/big/1.webp"
-    #                 async with session.get(url_link_to_photo) as response:
-    #                     # response = requests.get(url_link_to_photo, stream=True)
-    #                     # print(response.status())  # Проверяем, что запрос успеше
-    #                     filename = f".data/images/nm_id_{index}.webp"
-                        
-    #                     # Сохраняем изображение
-    #                     with open(filename, 'wb') as f:
-    #                         for chunk in response.iter_content(1024):
-    #                             f.write(chunk)
-    #         except Exception as e:
-    #             print(f"Error in parse_photos {str(e)[:300]}")
-    #             return {}
