@@ -105,6 +105,7 @@ async def main(BOT_TOKEN, NUMBER_OF_PARSING):
            
             await message.answer(reply, parse_mode="HTML")
             print(f"выдал ответ пользователю {chat_id}, {keyword}\n")
+            
             await message.answer("Обрабатываю фотографии")
             
             # list_of_nm_ids_and_number_of_images = []
@@ -127,7 +128,7 @@ if __name__ == "__main__":
     load_dotenv()
     BOT_TOKEN = os.getenv("TG_BOT_TOKEN")
     NUMBER_OF_PARSING = int(os.getenv("NUMBER_OF_PARSING"))
-    shutil.rmtree(".data/images")
+    shutil.rmtree(".data")
     os.makedirs(".data/images/", exist_ok=True)
 
     asyncio.run(main(BOT_TOKEN, NUMBER_OF_PARSING))
