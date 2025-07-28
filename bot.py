@@ -108,6 +108,9 @@ async def main(BOT_TOKEN, NUMBER_OF_PARSING):
             
             await send_photos(bot, chat_id, 0, 10)
             await send_photos(bot, chat_id, 10, 20)
+
+            # удаляем все данные о пользователе - если много пользователей, чтобы фотки не пересекались
+            # shutil.rmtree(".data")
         except Exception:
             await message.answer("\u274c Произошла ошибка при обработке запроса.")
             logging.exception("Ошибка при обработке запроса")
