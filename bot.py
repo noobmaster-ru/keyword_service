@@ -87,7 +87,9 @@ async def main(BOT_TOKEN, NUMBER_OF_PARSING):
             print("parse_main exec_time parse_main = ", exec_time)
         
 
-            reply = "\u2705 Топ-20 товаров по запросу:\n"
+            reply =f"\u2705 Топ-{NUMBER_OF_PARSING} товаров по запросу: <b>{keyword}</b>\n"
+            await message.answer(reply, parse_mode="HTML")
+            reply = ''
             for nm_id, data in result.items():
                 resp = f'<a href="{data["link"]}">{data["name"]}</a>'
                 reply += (
@@ -98,16 +100,20 @@ async def main(BOT_TOKEN, NUMBER_OF_PARSING):
                     f"Промо позиция: {data['promo_position']}\n"
                     f"Страница в поиске: {data['page']}\n"
                     f"Остатки: {data['remains']}\n"
+                    f"Cсылка на фото(на первое): {data['link_to_photos'].split(";")[0]}\n"
+                    f"Описание: {data['description'][:100]}...\n"
                 )
-            reply += f"\nВремя обработки: {exec_time:.2f} сек\n"
-           
+                await bot.send_photo(chat_id=message.chat.id, photo=data['link_to_photos'].split(";")[0], caption=reply, parse_mode="HTML")
+                reply = ''
+            reply = f"\nВремя обработки: {exec_time:.2f} сек\n"
+
             await message.answer(reply, parse_mode="HTML")
             print(f"выдал ответ пользователю {chat_id}, {keyword}\n")
             
-            await message.answer("Обрабатываю фотографии")
+            # await message.answer("Обрабатываю фотографии")
             
-            await send_photos(bot, chat_id, 0, 10)
-            await send_photos(bot, chat_id, 10, 20)
+            # await send_photos(bot, chat_id, 0, 10)
+            # await send_photos(bot, chat_id, 10, 20)
 
             # удаляем все данные о пользователе - если много пользователей, чтобы фотки не пересекались
             # shutil.rmtree(".data")
@@ -123,6 +129,6 @@ if __name__ == "__main__":
     BOT_TOKEN = os.getenv("TG_BOT_TOKEN")
     NUMBER_OF_PARSING = int(os.getenv("NUMBER_OF_PARSING"))
     shutil.rmtree(".data")
-    os.makedirs(".data/images/", exist_ok=True)
+    os.makedirs(".data", exist_ok=True)
 
     asyncio.run(main(BOT_TOKEN, NUMBER_OF_PARSING))
