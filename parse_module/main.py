@@ -18,14 +18,13 @@ async def main(keyword: str, NUMBER_OF_PARSING: int):
         await asyncio.gather(*tasks)
 
 
-
         result = dict(
             sorted(articles.items(), key=parser.sort_key) # сортировка по возврастанию organic_position
         ) 
         result_answer_parsing = dict(islice(result.items(), NUMBER_OF_PARSING))
         
         # парсим ПЕРВОЕ фото и ОПИСАНИЕ только для первых NUMBER_OF_PARSING артикулов отсортированных
-        await parser.parse_photo_and_desription(session, result_answer_parsing)
+        await parser.parse_photo(session, result_answer_parsing)
 
         with open(f".data/result_answer_parsing_{keyword}.json", "w", encoding="utf-8") as f:
             json.dump(result_answer_parsing, f, indent=4, ensure_ascii=False)

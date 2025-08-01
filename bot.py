@@ -8,56 +8,9 @@ from aiogram import F
 from aiogram import Bot, Dispatcher, types
 from aiogram.types import Message
 from aiogram.filters import CommandStart
-from aiogram.types import InputMediaPhoto,  FSInputFile
-from aiogram.utils.chat_action import ChatActionSender
 
 from parse_module.main import main as parse_main
 
-async def send_photos(bot: Bot, chat_id: int, offset: int = 0, limit: int = 10):
-    """
-    Отправка группы фотографий из папки images/
-    :param offset: начальный индекс
-    :param limit: максимальное количество фото (не более 10)
-    """
-    image_folder = ".data/images"
-    
-    # Получаем список файлов с поддержкой сортировки
-    image_files = sorted([
-        f for f in os.listdir(image_folder) 
-        if f.lower().endswith(('.webp')) # '.jpg', '.jpeg', '.png', 
-    ])[offset:offset+limit]
-
-    if not image_files:
-        await bot.send_message(chat_id, "🖼 В папке нет изображений!")
-        return
-
-    async with ChatActionSender.upload_photo(chat_id=chat_id, bot=bot):
-        media_group = []
-        
-        for i, filename in enumerate(image_files):
-            file_path = os.path.join(image_folder, filename)
-            
-            # Используем FSInputFile для локальных файлов
-            photo = FSInputFile(file_path)
-            
-            # Добавляем подпись только к первому изображению
-            if i == 0:
-                media_group.append(
-                    InputMediaPhoto(
-                        media=photo,
-                        caption=f"📸 Первые фото артикулов {offset+1}-{offset+len(image_files)} из {len(os.listdir(image_folder))}"
-                    )
-                )
-            else:
-                media_group.append(InputMediaPhoto(media=photo))
-
-        try:
-            await bot.send_media_group(chat_id=chat_id, media=media_group)
-        except Exception as e:
-            await bot.send_message(
-                chat_id,
-                f"❌ Ошибка при отправке фото: {str(e)}"
-            )
 
 async def main(BOT_TOKEN, NUMBER_OF_PARSING):
     bot = Bot(token=BOT_TOKEN)
@@ -110,13 +63,6 @@ async def main(BOT_TOKEN, NUMBER_OF_PARSING):
             await message.answer(reply, parse_mode="HTML")
             print(f"выдал ответ пользователю {chat_id}, {keyword}\n")
             
-            # await message.answer("Обрабатываю фотографии")
-            
-            # await send_photos(bot, chat_id, 0, 10)
-            # await send_photos(bot, chat_id, 10, 20)
-
-            # удаляем все данные о пользователе - если много пользователей, чтобы фотки не пересекались
-            # shutil.rmtree(".data")
         except Exception:
             await message.answer("\u274c Произошла ошибка при обработке запроса.")
             logging.exception("Ошибка при обработке запроса")

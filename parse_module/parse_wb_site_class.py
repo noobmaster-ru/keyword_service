@@ -1,13 +1,14 @@
 import aiohttp
-import math
 import asyncio
 import json
-import requests
-import os
-import shutil
-from typing import Union
 
-class ParseWbSiteClass:
+
+from parse_module.parsing_features.parse_price import ParsePrice
+from parse_module.parsing_features.parse_photo import ParsePhoto
+from parse_module.parsing_features.parse_description import ParseDescription
+from parse_module.parsing_features.tools import Tools
+
+class ParseWbSiteClass(ParsePrice, ParsePhoto, ParseDescription, Tools):
     def __init__(self, SEMAPHORE: asyncio.Semaphore):
         self.SEMAPHORE = SEMAPHORE
         self.PARAMS_PARSE_PAGE_TEMPLATE = {
@@ -45,147 +46,7 @@ class ParseWbSiteClass:
             "x-userid": "54570326",
         }
 
-    def sort_key(self, item: dict):
-        organic_pos = item[1]["organic_position"]
-        return (organic_pos is None, organic_pos or 0)
-
-    async def parse_description(self, session: aiohttp.ClientSession, nm_id: str) ->  Union[str, list[str]]:
-        try:
-            int_nm_id = int(nm_id)
-            short_nm_id = int_nm_id // 100000
-
-            # Определяем basket (сокращённый вариант не работает!)
-            if 0 <= short_nm_id <= 143:
-                basket = '01'
-            elif 144 <= short_nm_id <= 287:
-                basket = '02'
-            elif 288 <= short_nm_id <= 431:
-                basket = '03'
-            elif 432 <= short_nm_id <= 719:
-                basket = '04'
-            elif 720 <= short_nm_id <= 1007:
-                basket = '05'
-            elif 1008 <= short_nm_id <= 1061:
-                basket = '06'
-            elif 1062 <= short_nm_id <= 1115:
-                basket = '07'
-            elif 1116 <= short_nm_id <= 1169:
-                basket = '08'
-            elif 1170 <= short_nm_id <= 1313:
-                basket = '09'
-            elif 1314 <= short_nm_id <= 1601:
-                basket = '10'
-            elif 1602 <= short_nm_id <= 1655:
-                basket = '11'
-            elif 1656 <= short_nm_id <= 1919:
-                basket = '12'
-            elif 1920 <= short_nm_id <= 2045:
-                basket = '13'
-            elif 2046 <= short_nm_id <= 2189:
-                basket = '14'
-            elif 2190 <= short_nm_id <= 2405:
-                basket = '15'
-            # здесь вб добавил новые basket - пришло добавить (см в network:  banners.js -> Response)
-            elif 2406 <= short_nm_id <= 2621:
-                basket = '16'
-            elif 2622 <= short_nm_id <= 2837:
-                basket = '17'
-            elif 2838 <= short_nm_id <= 3053:
-                basket = '18'
-            elif 3054 <= short_nm_id <= 3269:
-                basket = '19'
-            elif 3270 <= short_nm_id <= 3485:
-                basket = '20'
-            elif 3486 <= short_nm_id <= 3701:
-                basket = '21'
-            elif 3702 <= short_nm_id <= 3917:
-                basket = '22'
-            elif 3918 <= short_nm_id <= 4133:
-                basket = '23'
-            elif 4134 <= short_nm_id <= 4349:
-                basket = '24'
-            elif 4350 <= short_nm_id <= 4565: 
-                basket = '25'
-            else:
-                basket = '26' 
-
-            headers_for_parse_description = {
-                'sec-ch-ua-platform': '"Android"',
-                'Referer': f'https://www.wildberries.ru/catalog/{nm_id}/detail.aspx',
-                'User-Agent': 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Mobile Safari/537.36',
-                'sec-ch-ua': '"Not)A;Brand";v="8", "Chromium";v="138", "Google Chrome";v="138"',
-                'sec-ch-ua-mobile': '?1',
-            }
-            url_for_parse_description = f"https://basket-{basket}.wbbasket.ru/vol{short_nm_id}/part{int_nm_id // 1000}/{nm_id}/info/ru/card.json"
-            async with session.get(url_for_parse_description,headers=headers_for_parse_description,) as response:
-                data = await response.json()
-                return data["description"], data["colors"] # возвращаем описание товара и список всех его размеров/цветов(нужно будет в парсинге цены parse_card)
-            
-        except Exception as e:
-            print("Error in parse_description")
-            return "Error in parse_description"
-    async def parse_card(self, session: aiohttp.ClientSession, nm_id: str, list_of_nm_ids: list) -> int | str:
-        try:
-            nm = "".join([f"{item};" for item in list_of_nm_ids])
-            params = {
-                "appType": "1",
-                "curr": "rub",
-                "dest": "-446115",
-                "spp": "30",
-                "hide_dtype": "14",
-                "ab_testing": "false",
-                "lang": "ru",
-                "nm": nm,
-            }
-            async with session.get(
-                "https://card.wb.ru/cards/v4/detail", params=params
-            ) as resp:
-                data = await resp.json()
-                products = data["products"]
-                for product in products:
-                    if int(product["id"]) == int(nm_id):
-                        sizes = product["sizes"]
-                        for size in sizes:
-                            if "price" in size:
-                                return size["price"]["product"]
-                return "Error in parse_card"
-                # return data["products"][0]["sizes"][0]["price"]["product"]
-        except Exception:
-            return "Нет в наличии"
-
-    async def parse_grade(
-        self, session: aiohttp.ClientSession, nm_id: str
-    ) -> int | str:
-        try:
-            params = {"curr": "RUB"}
-            headers = self.HEADERS_PARSE_PAGE_TEMPLATE.copy()
-            del headers["x-queryid"]
-            del headers["x-userid"]
-            headers["referer"] = (
-                f"https://www.wildberries.ru/catalog/{nm_id}/detail.aspx?targetUrl=SP"
-            )
-
-            async with session.get(
-                "https://user-grade.wildberries.ru/api/v5/grade",
-                params=params,
-                headers=headers,
-            ) as resp:
-                data = await resp.json()
-                return data["payload"]["payments"][0]["full_discount"]
-        except Exception:
-            return "Нет в наличии"
-
-    async def fetch_price(self, session: aiohttp.ClientSession, nm_id: str, list_of_nm_ids: list) -> dict:
-        full_discount = await self.parse_grade(session, nm_id)
-        price = await self.parse_card(session, nm_id, list_of_nm_ids)
-
-        if isinstance(full_discount, int) and isinstance(price, int):
-            wallet_price = math.floor((price / 100) * (1 - full_discount / 100))
-            return wallet_price
-        else:
-            return "Нет в наличии"
-
-    async def build_article(
+    async def build_data_nm_id(
         self,
         session: aiohttp.ClientSession,
         product: dict,
@@ -196,7 +57,6 @@ class ParseWbSiteClass:
             nm_id = str(product["id"])
             organic_pos = product["log"].get("position", None)
             promo_pos = product["log"].get("promoPosition", promo_position)
-
 
             description, list_of_nm_ids = await self.parse_description(session, nm_id)
             price = await self.fetch_price(session, nm_id, list_of_nm_ids)
@@ -246,7 +106,7 @@ class ParseWbSiteClass:
                     tasks = []
                     for product in products:
                         tasks.append(
-                            self.build_article(session, product, 1, promo_position)
+                            self.build_data_nm_id(session, product, 1, promo_position)
                         )
                         promo_position += 1
                     results = await asyncio.gather(*tasks)
@@ -287,7 +147,7 @@ class ParseWbSiteClass:
                     tasks = []
                     for product in products:
                         tasks.append(
-                            self.build_article(
+                            self.build_data_nm_id(
                                 session, product, page_number, promo_position
                             )
                         )
@@ -297,106 +157,3 @@ class ParseWbSiteClass:
             except Exception as e:
                 print(f"Error in parse_page_number_ {str(e)[:300]}")
                 return {}
-    
-
-    async def parse_photo_and_desription(self, session: aiohttp.ClientSession, articles: dict):
-        tasks = []
-
-        for index, key in enumerate(articles):
-            tasks.append(self._parse_photo_and_description(session, articles[key], index))
-
-        await asyncio.gather(*tasks)
-    
-    # основу кода функции взял с https://github.com/Duff89/wildberries_parser/blob/master/parser.py
-    async def _parse_photo_and_description(self, session: aiohttp.ClientSession, article: dict, index: int):
-        async with self.SEMAPHORE:
-            try:
-                nm_id = int(article["nm_id"])
-                short_nm_id = nm_id // 100000
-
-                # Определяем basket (сокращённый вариант не работает!)
-                if 0 <= short_nm_id <= 143:
-                    basket = '01'
-                elif 144 <= short_nm_id <= 287:
-                    basket = '02'
-                elif 288 <= short_nm_id <= 431:
-                    basket = '03'
-                elif 432 <= short_nm_id <= 719:
-                    basket = '04'
-                elif 720 <= short_nm_id <= 1007:
-                    basket = '05'
-                elif 1008 <= short_nm_id <= 1061:
-                    basket = '06'
-                elif 1062 <= short_nm_id <= 1115:
-                    basket = '07'
-                elif 1116 <= short_nm_id <= 1169:
-                    basket = '08'
-                elif 1170 <= short_nm_id <= 1313:
-                    basket = '09'
-                elif 1314 <= short_nm_id <= 1601:
-                    basket = '10'
-                elif 1602 <= short_nm_id <= 1655:
-                    basket = '11'
-                elif 1656 <= short_nm_id <= 1919:
-                    basket = '12'
-                elif 1920 <= short_nm_id <= 2045:
-                    basket = '13'
-                elif 2046 <= short_nm_id <= 2189:
-                    basket = '14'
-                elif 2190 <= short_nm_id <= 2405:
-                    basket = '15'
-                # здесь вб добавил новые basket - пришло добавить (см в network:  banners.js -> Response)
-                elif 2406 <= short_nm_id <= 2621:
-                    basket = '16'
-                elif 2622 <= short_nm_id <= 2837:
-                    basket = '17'
-                elif 2838 <= short_nm_id <= 3053:
-                    basket = '18'
-                elif 3054 <= short_nm_id <= 3269:
-                    basket = '19'
-                elif 3270 <= short_nm_id <= 3485:
-                    basket = '20'
-                elif 3486 <= short_nm_id <= 3701:
-                    basket = '21'
-                elif 3702 <= short_nm_id <= 3917:
-                    basket = '22'
-                elif 3918 <= short_nm_id <= 4133:
-                    basket = '23'
-                elif 4134 <= short_nm_id <= 4349:
-                    basket = '24'
-                elif 4350 <= short_nm_id <= 4565: 
-                    basket = '25'
-                else:
-                    basket = '26'
-                
-                # URL фото
-                # url = f"https://basket-{basket}.wbbasket.ru/vol{short_nm_id}/part{nm_id // 1000}/{nm_id}/images/big/1.webp"
-                # async with session.get(url) as response:
-                #     if response.status == 200:
-                #         content = await response.read()
-                #         article["link_to_photo"] = url
-                #         filename = f".data/images/nm_id_{index}_.webp"
-                #         with open(filename, 'wb') as f:
-                #             f.write(content)
-                #     else:
-                #         print(f"⚠️ Failed to download {nm_id}, status: {response.status} , text = {response.content}")
-                link_url_all_photos = "".join([
-                    f"https://basket-{basket}.wbbasket.ru/vol{short_nm_id}/part{nm_id // 1000}/{nm_id}/images/big/{i}.webp;"
-                    for i in range(1, article["number_of_images"] + 1)])
-                article["link_to_photos"] = link_url_all_photos
-
-
-                headers_for_parse_description = {
-                    'sec-ch-ua-platform': '"Android"',
-                    'Referer': f'https://www.wildberries.ru/catalog/{nm_id}/detail.aspx',
-                    'User-Agent': 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Mobile Safari/537.36',
-                    'sec-ch-ua': '"Not)A;Brand";v="8", "Chromium";v="138", "Google Chrome";v="138"',
-                    'sec-ch-ua-mobile': '?1',
-                }
-                url_for_parse_description = f"https://basket-{basket}.wbbasket.ru/vol{short_nm_id}/part{nm_id // 1000}/{nm_id}/info/ru/card.json"
-                async with session.get(url_for_parse_description,headers=headers_for_parse_description,) as response:
-                    data = await response.json()
-                    article["description"] = data["description"]
-                    # response = requests.get('https://basket-16.wbbasket.ru/vol2430/part243012/243012281/info/ru/card.json', headers=headers)
-            except Exception as e:
-                print(f"❌ Error downloading photo for {article.get('nm_id')}: {e}")
