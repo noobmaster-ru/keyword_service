@@ -8,6 +8,7 @@ from parse_module.parsing_features.parse_photo import ParsePhoto
 from parse_module.parsing_features.parse_description import ParseDescription
 from parse_module.parsing_features.tools import Tools
 
+
 class ParseWbSiteClass(ParsePrice, ParsePhoto, ParseDescription, Tools):
     def __init__(self, SEMAPHORE: asyncio.Semaphore):
         self.SEMAPHORE = SEMAPHORE
@@ -60,7 +61,7 @@ class ParseWbSiteClass(ParsePrice, ParsePhoto, ParseDescription, Tools):
 
             description, list_of_nm_ids = await self.parse_description(session, nm_id)
             price = await self.fetch_price(session, nm_id, list_of_nm_ids)
-            
+
             return {
                 "nm_id": product["id"],
                 "organic_position": organic_pos,
@@ -73,7 +74,7 @@ class ParseWbSiteClass(ParsePrice, ParsePhoto, ParseDescription, Tools):
                 "name": product.get("name"),
                 "remains": product["totalQuantity"],
                 "number_of_images": product["pics"],
-                "description": description
+                "description": description,
             }
         except Exception:
             return None

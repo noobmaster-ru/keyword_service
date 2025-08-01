@@ -1,12 +1,15 @@
 import aiohttp
 import math
 
+
 class ParsePrice:
     def __init__(self):
         pass
 
     # надо переписать будет - иногда может некорректно работать из-за размера/цвета: неизвестно какой у артикула будет
-    async def parse_card(self, session: aiohttp.ClientSession, nm_id: str, list_of_nm_ids: list) -> int | str:
+    async def parse_card(
+        self, session: aiohttp.ClientSession, nm_id: str, list_of_nm_ids: list
+    ) -> int | str:
         try:
             nm = "".join([f"{item};" for item in list_of_nm_ids])
             params = {
@@ -57,7 +60,9 @@ class ParsePrice:
         except Exception:
             return "Нет в наличии"
 
-    async def fetch_price(self, session: aiohttp.ClientSession, nm_id: str, list_of_nm_ids: list) -> dict:
+    async def fetch_price(
+        self, session: aiohttp.ClientSession, nm_id: str, list_of_nm_ids: list
+    ) -> dict:
         full_discount = await self.parse_grade(session, nm_id)
         price = await self.parse_card(session, nm_id, list_of_nm_ids)
 

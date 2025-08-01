@@ -35,14 +35,17 @@ async def main(BOT_TOKEN, NUMBER_OF_PARSING):
 
         try:
             start = time.time()
-            result = await parse_main(keyword=keyword, NUMBER_OF_PARSING=NUMBER_OF_PARSING)
+            result = await parse_main(
+                keyword=keyword, NUMBER_OF_PARSING=NUMBER_OF_PARSING
+            )
             exec_time = time.time() - start
             print("parse_main exec_time parse_main = ", exec_time)
-        
 
-            reply =f"\u2705 Топ-{NUMBER_OF_PARSING} товаров по запросу: <b>{keyword}</b>\n"
+            reply = (
+                f"\u2705 Топ-{NUMBER_OF_PARSING} товаров по запросу: <b>{keyword}</b>\n"
+            )
             await message.answer(reply, parse_mode="HTML")
-            reply = ''
+            reply = ""
             for nm_id, data in result.items():
                 resp = f'<a href="{data["link"]}">{data["name"]}</a>'
                 reply += (
@@ -53,16 +56,21 @@ async def main(BOT_TOKEN, NUMBER_OF_PARSING):
                     f"Промо позиция: {data['promo_position']}\n"
                     f"Страница в поиске: {data['page']}\n"
                     f"Остатки: {data['remains']}\n"
-                    f"Cсылка на фото(на первое): {data['link_to_photos'].split(";")[0]}\n"
+                    f"Cсылка на фото(на первое): {data['link_to_photos'].split(';')[0]}\n"
                     f"Описание: {data['description'][:100]}...\n"
                 )
-                await bot.send_photo(chat_id=message.chat.id, photo=data['link_to_photos'].split(";")[0], caption=reply, parse_mode="HTML")
-                reply = ''
+                await bot.send_photo(
+                    chat_id=message.chat.id,
+                    photo=data["link_to_photos"].split(";")[0],
+                    caption=reply,
+                    parse_mode="HTML",
+                )
+                reply = ""
             reply = f"\nВремя обработки: {exec_time:.2f} сек\n"
 
             await message.answer(reply, parse_mode="HTML")
             print(f"выдал ответ пользователю {chat_id}, {keyword}\n")
-            
+
         except Exception:
             await message.answer("\u274c Произошла ошибка при обработке запроса.")
             logging.exception("Ошибка при обработке запроса")
