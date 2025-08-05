@@ -8,7 +8,6 @@ from aiogram import F
 from aiogram import Bot, Dispatcher, types
 from aiogram.types import Message
 from aiogram.filters import CommandStart
-import time
 from parse_module.main import main as parse_main
 
 
@@ -52,14 +51,14 @@ async def main(BOT_TOKEN, NUMBER_OF_PARSING):
                     f"\n{resp}\n"
                     f"{data['price']}₽ (СПП = 30%)\n"
                     f"{data['nmReviewRating']} ({data['nmFeedbacks']} отзывов) \n"
-                    f"Рейтинг последних 5 отзывов: {data['five_last_feedbacks_rating']} \n" 
+                    f"Рейтинг последних 5 отзывов: {data['five_last_feedbacks_rating']} \n"
                     f"Органическая позиция: {data['organic_position']}\n"
                     f"Промо позиция: {data['promo_position']}\n"
                     f"Страница в поиске: {data['page']}\n"
                     f"Остатки: {data['remains']}\n"
                     f"Cсылка на фото(на первое): {data['link_to_photos'].split(';')[0]}\n"
                     f"\nОписание: {data['description'][:100]}...\n"
-                    f"\nТекст последнего отзыва (Оценка {data["rate_of_last_feedback"]}): {data['text_of_last_feedback'][:100]}...\n" 
+                    f"\nТекст последнего отзыва (Оценка {data['rate_of_last_feedback']}): {data['text_of_last_feedback'][:100]}...\n"
                 )
                 await bot.send_photo(
                     chat_id=message.chat.id,

@@ -1,4 +1,3 @@
-import aiohttp
 import asyncio
 from parse_module.parsing_features.tools import Tools
 
@@ -14,9 +13,7 @@ class ParsePhoto:
         await asyncio.gather(*tasks)
 
     # основу кода функции взял с https://github.com/Duff89/wildberries_parser/blob/master/parser.py
-    async def _parse_photo(
-        self, article: dict
-    ):
+    async def _parse_photo(self, article: dict):
         try:
             nm_id = int(article["nm_id"])
             short_nm_id = nm_id // 100000

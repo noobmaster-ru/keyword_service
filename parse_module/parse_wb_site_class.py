@@ -11,7 +11,7 @@ from parse_module.parsing_features.parse_feedbacks import ParseFiveLastFeedback
 
 
 class ParseWbSiteClass(
-    ParsePrice, ParsePhoto, ParseDescription, Tools,  ParseFiveLastFeedback
+    ParsePrice, ParsePhoto, ParseDescription, Tools, ParseFiveLastFeedback
 ):
     def __init__(self):
         self.PARAMS_PARSE_PAGE_TEMPLATE = {
@@ -63,9 +63,9 @@ class ParseWbSiteClass(
 
             description, list_of_nm_ids = await self.parse_description(session, nm_id)
             price = await self.fetch_price(session, nm_id, list_of_nm_ids)
-            
-            last_five_feedbacks_rating_with_text_and_rate = await self.parse_last_five_feedbacks_rating(
-                session, nm_id
+
+            last_five_feedbacks_rating_with_text_and_rate = (
+                await self.parse_last_five_feedbacks_rating(session, nm_id)
             )
 
             return {
@@ -75,9 +75,15 @@ class ParseWbSiteClass(
                 "price": price,
                 "nmFeedbacks": product.get("nmFeedbacks"),
                 "nmReviewRating": product.get("nmReviewRating"),
-                "five_last_feedbacks_rating": last_five_feedbacks_rating_with_text_and_rate[0],
-                "text_of_last_feedback": last_five_feedbacks_rating_with_text_and_rate[1],
-                "rate_of_last_feedback": last_five_feedbacks_rating_with_text_and_rate[2],
+                "five_last_feedbacks_rating": last_five_feedbacks_rating_with_text_and_rate[
+                    0
+                ],
+                "text_of_last_feedback": last_five_feedbacks_rating_with_text_and_rate[
+                    1
+                ],
+                "rate_of_last_feedback": last_five_feedbacks_rating_with_text_and_rate[
+                    2
+                ],
                 "page": int(page_number),
                 "link": f"https://www.wildberries.ru/catalog/{nm_id}/detail.aspx",
                 "name": product.get("name"),
