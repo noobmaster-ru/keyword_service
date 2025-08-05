@@ -7,11 +7,13 @@ from parse_module.parsing_features.parse_price import ParsePrice
 from parse_module.parsing_features.parse_photo import ParsePhoto
 from parse_module.parsing_features.parse_description import ParseDescription
 from parse_module.parsing_features.tools import Tools
+from parse_module.parsing_features.parse_feedbacks import ParseFiveLastFeedback
 
 
-class ParseWbSiteClass(ParsePrice, ParsePhoto, ParseDescription, Tools):
-    def __init__(self, SEMAPHORE: asyncio.Semaphore):
-        self.SEMAPHORE = SEMAPHORE
+class ParseWbSiteClass(
+    ParsePrice, ParsePhoto, ParseDescription, Tools,  ParseFiveLastFeedback
+):
+    def __init__(self):
         self.PARAMS_PARSE_PAGE_TEMPLATE = {
             "ab_testid": "pfact_gr_1",
             "appType": "1",
@@ -61,6 +63,10 @@ class ParseWbSiteClass(ParsePrice, ParsePhoto, ParseDescription, Tools):
 
             description, list_of_nm_ids = await self.parse_description(session, nm_id)
             price = await self.fetch_price(session, nm_id, list_of_nm_ids)
+            
+            last_five_feedbacks_rating_with_text_and_rate = await self.parse_last_five_feedbacks_rating(
+                session, nm_id
+            )
 
             return {
                 "nm_id": product["id"],
@@ -69,6 +75,9 @@ class ParseWbSiteClass(ParsePrice, ParsePhoto, ParseDescription, Tools):
                 "price": price,
                 "nmFeedbacks": product.get("nmFeedbacks"),
                 "nmReviewRating": product.get("nmReviewRating"),
+                "five_last_feedbacks_rating": last_five_feedbacks_rating_with_text_and_rate[0],
+                "text_of_last_feedback": last_five_feedbacks_rating_with_text_and_rate[1],
+                "rate_of_last_feedback": last_five_feedbacks_rating_with_text_and_rate[2],
                 "page": int(page_number),
                 "link": f"https://www.wildberries.ru/catalog/{nm_id}/detail.aspx",
                 "name": product.get("name"),
@@ -82,39 +91,38 @@ class ParseWbSiteClass(ParsePrice, ParsePhoto, ParseDescription, Tools):
     async def parse_first_page(
         self, session: aiohttp.ClientSession, keyword: str, articles: dict
     ) -> dict:
-        async with self.SEMAPHORE:
-            try:
-                headers = self.HEADERS_PARSE_PAGE_TEMPLATE.copy()
-                headers["referer"] = (
-                    "https://www.wildberries.ru/catalog/0/search.aspx?search=%D0%B1%D1%83%D1%82%D1%8B%D0%BB%D0%BA%D0%B0%20%D0%B4%D0%B5%D1%82%D1%81%D0%BA%D0%B0%D1%8F"
-                )
+        try:
+            headers = self.HEADERS_PARSE_PAGE_TEMPLATE.copy()
+            headers["referer"] = (
+                "https://www.wildberries.ru/catalog/0/search.aspx?search=%D0%B1%D1%83%D1%82%D1%8B%D0%BB%D0%BA%D0%B0%20%D0%B4%D0%B5%D1%82%D1%81%D0%BA%D0%B0%D1%8F"
+            )
 
-                params = self.PARAMS_PARSE_PAGE_TEMPLATE.copy()
-                params["page"] = "1"
-                params["query"] = keyword
+            params = self.PARAMS_PARSE_PAGE_TEMPLATE.copy()
+            params["page"] = "1"
+            params["query"] = keyword
 
-                async with session.get(
-                    "https://search.wb.ru/exactmatch/ru/common/v14/search",
-                    params=params,
-                    headers=headers,
-                ) as response:
-                    data_json = json.loads(
-                        await response.text()
-                    )  # response.json() выдает error: 200, message='Attempt to decode JSON with unexpected mimetype: text/plain;
-                    products = data_json.get("products")
+            async with session.get(
+                "https://search.wb.ru/exactmatch/ru/common/v14/search",
+                params=params,
+                headers=headers,
+            ) as response:
+                data_json = json.loads(
+                    await response.text()
+                )  # response.json() выдает error: 200, message='Attempt to decode JSON with unexpected mimetype: text/plain;
+                products = data_json.get("products")
 
-                    promo_position = 0
-                    tasks = []
-                    for product in products:
-                        tasks.append(
-                            self.build_data_nm_id(session, product, 1, promo_position)
-                        )
-                        promo_position += 1
-                    results = await asyncio.gather(*tasks)
-                    articles.update({item["nm_id"]: item for item in results if item})
-            except Exception as e:
-                print(f"Eror in parse_first_page , {str(e)[:300]}")
-                return {}
+                promo_position = 0
+                tasks = []
+                for product in products:
+                    tasks.append(
+                        self.build_data_nm_id(session, product, 1, promo_position)
+                    )
+                    promo_position += 1
+                results = await asyncio.gather(*tasks)
+                articles.update({item["nm_id"]: item for item in results if item})
+        except Exception as e:
+            print(f"Eror in parse_first_page , {str(e)[:300]}")
+            return {}
 
     async def parse_page_number_(
         self,
@@ -123,38 +131,37 @@ class ParseWbSiteClass(ParsePrice, ParsePhoto, ParseDescription, Tools):
         page_number: str,
         articles: dict,
     ) -> dict:
-        async with self.SEMAPHORE:
-            try:
-                headers = self.HEADERS_PARSE_PAGE_TEMPLATE.copy()
-                headers["referer"] = (
-                    f"https://www.wildberries.ru/catalog/0/search.aspx?page={page_number}&sort=popular&search=%D0%B1%D1%83%D1%82%D1%8B%D0%BB%D0%BA%D0%B0+%D0%B4%D0%B5%D1%82%D1%81%D0%BA%D0%B0%D1%8F"
-                )
+        try:
+            headers = self.HEADERS_PARSE_PAGE_TEMPLATE.copy()
+            headers["referer"] = (
+                f"https://www.wildberries.ru/catalog/0/search.aspx?page={page_number}&sort=popular&search=%D0%B1%D1%83%D1%82%D1%8B%D0%BB%D0%BA%D0%B0+%D0%B4%D0%B5%D1%82%D1%81%D0%BA%D0%B0%D1%8F"
+            )
 
-                params = self.PARAMS_PARSE_PAGE_TEMPLATE.copy()
-                params["page"] = page_number
-                params["query"] = keyword
+            params = self.PARAMS_PARSE_PAGE_TEMPLATE.copy()
+            params["page"] = page_number
+            params["query"] = keyword
 
-                async with session.get(
-                    "https://search.wb.ru/exactmatch/ru/common/v14/search",
-                    params=params,
-                    headers=headers,
-                ) as response:
-                    data_json = json.loads(
-                        await response.text()
-                    )  # response.json() выдает error: 200, message='Attempt to decode JSON with unexpected mimetype: text/plain;
-                    products = data_json.get("products")
-                    promo_position = 0
+            async with session.get(
+                "https://search.wb.ru/exactmatch/ru/common/v14/search",
+                params=params,
+                headers=headers,
+            ) as response:
+                data_json = json.loads(
+                    await response.text()
+                )  # response.json() выдает error: 200, message='Attempt to decode JSON with unexpected mimetype: text/plain;
+                products = data_json.get("products")
+                promo_position = 0
 
-                    tasks = []
-                    for product in products:
-                        tasks.append(
-                            self.build_data_nm_id(
-                                session, product, page_number, promo_position
-                            )
+                tasks = []
+                for product in products:
+                    tasks.append(
+                        self.build_data_nm_id(
+                            session, product, page_number, promo_position
                         )
-                        promo_position += 1
-                    results = await asyncio.gather(*tasks)
-                    articles.update({item["nm_id"]: item for item in results if item})
-            except Exception as e:
-                print(f"Error in parse_page_number_ {str(e)[:300]}")
-                return {}
+                    )
+                    promo_position += 1
+                results = await asyncio.gather(*tasks)
+                articles.update({item["nm_id"]: item for item in results if item})
+        except Exception as e:
+            print(f"Error in parse_page_number_ {str(e)[:300]}")
+            return {}

@@ -6,8 +6,8 @@ from parse_module.parse_wb_site_class import ParseWbSiteClass
 
 
 async def main(keyword: str, NUMBER_OF_PARSING: int):
-    SEMAPHORE = asyncio.Semaphore(100)  # можно поставить 20 или 50
-    parser = ParseWbSiteClass(SEMAPHORE)
+    # SEMAPHORE = asyncio.Semaphore(100)  # можно поставить 20 или 50
+    parser = ParseWbSiteClass()
     articles = {}
     tasks = []
     async with aiohttp.ClientSession() as session:
@@ -24,7 +24,7 @@ async def main(keyword: str, NUMBER_OF_PARSING: int):
         result_answer_parsing = dict(islice(result.items(), NUMBER_OF_PARSING))
 
         # парсим ПЕРВОЕ фото и ОПИСАНИЕ только для первых NUMBER_OF_PARSING артикулов отсортированных
-        await parser.parse_photo(session, result_answer_parsing)
+        await parser.parse_photo(result_answer_parsing)
 
         with open(
             f".data/result_answer_parsing_{keyword}.json", "w", encoding="utf-8"
