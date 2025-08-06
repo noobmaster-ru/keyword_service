@@ -10,6 +10,8 @@ from aiogram.types import Message
 from aiogram.filters import CommandStart
 from parse_module.main import main as parse_main
 
+from aiogram.types import FSInputFile
+
 
 async def main(BOT_TOKEN, NUMBER_OF_PARSING):
     bot = Bot(token=BOT_TOKEN)
@@ -31,7 +33,9 @@ async def main(BOT_TOKEN, NUMBER_OF_PARSING):
             f"🔍 Получена ключевая фраза: <b>{keyword}</b>\nПожалуйста, подождите, идёт обработка...\n",
             parse_mode="HTML",
         )
-
+        # очищаем данные по прошлому запросу
+        shutil.rmtree(".data")
+        os.makedirs(".data", exist_ok=True)
         try:
             start = time.time()
             result = await parse_main(
@@ -60,12 +64,21 @@ async def main(BOT_TOKEN, NUMBER_OF_PARSING):
                     f"\nОписание: {data['description'][:100]}...\n"
                     f"\nТекст последнего отзыва (Оценка {data['rate_of_last_feedback']}): {data['text_of_last_feedback'][:100]}...\n"
                 )
-                await bot.send_photo(
+
+                sent_message = await bot.send_photo(
                     chat_id=message.chat.id,
                     photo=data["link_to_photos"].split(";")[0],
                     caption=reply,
                     parse_mode="HTML",
                 )
+                video = FSInputFile(f".data/video_{nm_id}.mp4")
+
+                if data["link_to_video"] != "":
+                    await message.answer_video(
+                        video=video,
+                        caption="Вот видео(максимум 20сек - обрезал, лимит 50мб)",
+                        reply_to_message_id=sent_message.message_id,
+                    )
                 reply = ""
             reply = f"\nВремя обработки: {exec_time:.2f} сек\n"
 
@@ -83,7 +96,5 @@ if __name__ == "__main__":
     load_dotenv()
     BOT_TOKEN = os.getenv("TG_BOT_TOKEN")
     NUMBER_OF_PARSING = int(os.getenv("NUMBER_OF_PARSING"))
-    shutil.rmtree(".data")
-    os.makedirs(".data", exist_ok=True)
 
     asyncio.run(main(BOT_TOKEN, NUMBER_OF_PARSING))

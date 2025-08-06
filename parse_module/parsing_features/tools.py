@@ -7,6 +7,37 @@ class Tools:
         return (organic_pos is None, organic_pos or 0)
 
     @staticmethod
+    def build_basket_for_video(nm_id: int) -> str:
+        vol_value = nm_id % 144
+        if 0 <= vol_value <= 11:
+            basket = "01"
+        elif 12 <= vol_value <= 23:
+            basket = "02"
+        elif 24 <= vol_value <= 35:
+            basket = "03"
+        elif 36 <= vol_value <= 47:
+            basket = "04"
+        elif 48 <= vol_value <= 59:
+            basket = "05"
+        elif 60 <= vol_value <= 71:
+            basket = "06"
+        elif 72 <= vol_value <= 83:
+            basket = "07"
+        elif 84 <= vol_value <= 95:
+            basket = "08"
+        elif 96 <= vol_value <= 107:
+            basket = "09"
+        elif 108 <= vol_value <= 119:
+            basket = "10"
+        elif 120 <= vol_value <= 131:
+            basket = "11"
+        elif 132 <= vol_value <= 143:
+            basket = "12"
+        else:
+            basket = "13"
+        return basket, vol_value
+
+    @staticmethod
     def build_basket(short_nm_id: int) -> str:
         # Определяем basket (сокращённый вариант через switch не работает!)
         if 0 <= short_nm_id <= 143:

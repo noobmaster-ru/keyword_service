@@ -8,10 +8,11 @@ from parse_module.parsing_features.parse_photo import ParsePhoto
 from parse_module.parsing_features.parse_description import ParseDescription
 from parse_module.parsing_features.tools import Tools
 from parse_module.parsing_features.parse_feedbacks import ParseFiveLastFeedback
+from parse_module.parsing_features.parse_video import ParseVideo
 
 
 class ParseWbSiteClass(
-    ParsePrice, ParsePhoto, ParseDescription, Tools, ParseFiveLastFeedback
+    ParsePrice, ParsePhoto, ParseDescription, Tools, ParseFiveLastFeedback, ParseVideo
 ):
     def __init__(self):
         self.PARAMS_PARSE_PAGE_TEMPLATE = {

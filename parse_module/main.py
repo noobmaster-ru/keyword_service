@@ -6,7 +6,6 @@ from parse_module.parse_wb_site_class import ParseWbSiteClass
 
 
 async def main(keyword: str, NUMBER_OF_PARSING: int):
-    # SEMAPHORE = asyncio.Semaphore(100)  # можно поставить 20 или 50
     parser = ParseWbSiteClass()
     articles = {}
     tasks = []
@@ -26,6 +25,8 @@ async def main(keyword: str, NUMBER_OF_PARSING: int):
         # парсим ПЕРВОЕ фото и ОПИСАНИЕ только для первых NUMBER_OF_PARSING артикулов отсортированных
         await parser.parse_photo(result_answer_parsing)
 
+        # парсим ссылку на видео(если есть, если нет , то "")
+        await parser.parse_video(result_answer_parsing)
         with open(
             f".data/result_answer_parsing_{keyword}.json", "w", encoding="utf-8"
         ) as f:
