@@ -27,6 +27,7 @@ async def main(keyword: str, NUMBER_OF_PARSING: int):
 
         # парсим ссылку на видео(если есть, если нет , то "")
         await parser.parse_video(result_answer_parsing)
+        
         with open(
             f".data/result_answer_parsing_{keyword}.json", "w", encoding="utf-8"
         ) as f:

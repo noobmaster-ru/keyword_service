@@ -34,7 +34,8 @@ async def main(BOT_TOKEN, NUMBER_OF_PARSING):
             parse_mode="HTML",
         )
         # очищаем данные по прошлому запросу
-        shutil.rmtree(".data")
+        if os.path.exists(".data"):
+            shutil.rmtree(".data")
         os.makedirs(".data", exist_ok=True)
         try:
             start = time.time()
@@ -96,5 +97,6 @@ if __name__ == "__main__":
     load_dotenv()
     BOT_TOKEN = os.getenv("TG_BOT_TOKEN")
     NUMBER_OF_PARSING = int(os.getenv("NUMBER_OF_PARSING"))
+    print("bot launched!")
 
     asyncio.run(main(BOT_TOKEN, NUMBER_OF_PARSING))

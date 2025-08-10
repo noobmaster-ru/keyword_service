@@ -1,5 +1,5 @@
 constants.py
-venv/
+venv3.12/
 __pycache__/
 *.pyc
 .DS_Store
