@@ -7,9 +7,7 @@ class ParsePhoto:
         pass
 
     async def parse_photo(self, articles: dict):
-        tasks = []
-        for index, key in enumerate(articles):
-            tasks.append(self._parse_photo(articles[key]))
+        tasks = [self._parse_photo(articles[key]) for key in articles]
         await asyncio.gather(*tasks)
 
     # основу кода функции взял с https://github.com/Duff89/wildberries_parser/blob/master/parser.py

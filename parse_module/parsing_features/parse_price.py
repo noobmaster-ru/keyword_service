@@ -1,6 +1,6 @@
 import aiohttp
 import math
-
+import asyncio
 
 class ParsePrice:
     def __init__(self):
@@ -63,9 +63,11 @@ class ParsePrice:
     async def fetch_price(
         self, session: aiohttp.ClientSession, nm_id: str, list_of_nm_ids: list
     ) -> dict:
-        full_discount = await self.parse_grade(session, nm_id)
-        price = await self.parse_card(session, nm_id, list_of_nm_ids)
-
+  
+        full_discount_task = self.parse_grade(session, nm_id)
+        price_task = self.parse_card(session, nm_id, list_of_nm_ids)
+        
+        full_discount, price = await asyncio.gather(full_discount_task, price_task)
         if isinstance(full_discount, int) and isinstance(price, int):
             wallet_price = math.floor((price / 100) * (1 - full_discount / 100))
             return wallet_price

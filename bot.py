@@ -77,7 +77,7 @@ async def main(BOT_TOKEN, NUMBER_OF_PARSING):
                 if data["link_to_video"] != "":
                     await message.answer_video(
                         video=video,
-                        caption="Вот видео(максимум 20сек - обрезал, лимит 50мб)",
+                        caption="Дарю❤️",
                         reply_to_message_id=sent_message.message_id,
                     )
                 reply = ""

@@ -62,12 +62,16 @@ class ParseWbSiteClass(
             organic_pos = product["log"].get("position", None)
             promo_pos = product["log"].get("promoPosition", promo_position)
 
-            description, list_of_nm_ids = await self.parse_description(session, nm_id)
-            price = await self.fetch_price(session, nm_id, list_of_nm_ids)
 
-            last_five_feedbacks_rating_with_text_and_rate = (
-                await self.parse_last_five_feedbacks_rating(session, nm_id)
-            )
+            desc_task = self.parse_description(session, nm_id)
+            feedback_task = self.parse_last_five_feedbacks_rating(session, nm_id)
+
+            # ждем сначала описание, чтобы получить list_of_nm_ids
+            description, list_of_nm_ids = await desc_task
+
+            # но пока оно грузилось, параллельно грузились отзывы
+            price_task = self.fetch_price(session, nm_id, list_of_nm_ids)
+            price, last_five_feedbacks_rating_with_text_and_rate = await asyncio.gather(price_task, feedback_task)
 
             return {
                 "nm_id": product["id"],

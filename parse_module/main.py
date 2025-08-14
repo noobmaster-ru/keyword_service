@@ -1,7 +1,6 @@
 import aiohttp
 import asyncio
 from itertools import islice
-import json
 from parse_module.parse_wb_site_class import ParseWbSiteClass
 
 
@@ -22,14 +21,10 @@ async def main(keyword: str, NUMBER_OF_PARSING: int):
         )
         result_answer_parsing = dict(islice(result.items(), NUMBER_OF_PARSING))
 
-        # парсим ПЕРВОЕ фото и ОПИСАНИЕ только для первых NUMBER_OF_PARSING артикулов отсортированных
-        await parser.parse_photo(result_answer_parsing)
-
-        # парсим ссылку на видео(если есть, если нет , то "")
-        await parser.parse_video(result_answer_parsing)
-        
-        with open(
-            f".data/result_answer_parsing_{keyword}.json", "w", encoding="utf-8"
-        ) as f:
-            json.dump(result_answer_parsing, f, indent=4, ensure_ascii=False)
+    
+        # фото и видео качаем ПАРАЛЛЕЛЬНО
+        await asyncio.gather(
+            parser.parse_photo(result_answer_parsing),
+            parser.parse_video(result_answer_parsing)
+        )
         return result_answer_parsing

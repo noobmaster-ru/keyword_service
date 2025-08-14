@@ -1,5 +1,5 @@
 constants.py
-venv3.12/
+venv/
 __pycache__/
 *.pyc
 .DS_Store
@@ -8,3 +8,4 @@ __pycache__/
 .env
 .data
 .data/images/
+test_*.py
