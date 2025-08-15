@@ -10,8 +10,6 @@ from aiogram.types import Message
 from aiogram.filters import CommandStart
 from parse_module.main import main as parse_main
 
-from aiogram.types import FSInputFile
-
 
 async def main(BOT_TOKEN, NUMBER_OF_PARSING):
     bot = Bot(token=BOT_TOKEN)
@@ -33,10 +31,7 @@ async def main(BOT_TOKEN, NUMBER_OF_PARSING):
             f"🔍 Получена ключевая фраза: <b>{keyword}</b>\nПожалуйста, подождите, идёт обработка...\n",
             parse_mode="HTML",
         )
-        # очищаем данные по прошлому запросу
-        if os.path.exists(".data"):
-            shutil.rmtree(".data")
-        os.makedirs(".data", exist_ok=True)
+
         try:
             start = time.time()
             result = await parse_main(
@@ -72,14 +67,6 @@ async def main(BOT_TOKEN, NUMBER_OF_PARSING):
                     caption=reply,
                     parse_mode="HTML",
                 )
-                video = FSInputFile(f".data/video_{nm_id}.mp4")
-
-                if data["link_to_video"] != "":
-                    await message.answer_video(
-                        video=video,
-                        caption="Дарю❤️",
-                        reply_to_message_id=sent_message.message_id,
-                    )
                 reply = ""
             reply = f"\nВремя обработки: {exec_time:.2f} сек\n"
 

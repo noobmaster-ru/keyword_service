@@ -1,7 +1,7 @@
 import aiohttp
 from typing import Union
 from parse_module.parsing_features.tools import Tools
-
+import json
 
 class ParseDescription:
     async def parse_description(
@@ -25,11 +25,14 @@ class ParseDescription:
                 url_for_parse_description,
                 headers=headers_for_parse_description,
             ) as response:
-                data = await response.json()
+                # data = await response.json()
+                data = json.loads(
+                    await response.text()
+                ) 
                 return (
                     data["description"],
                     data["colors"],
                 )  # возвращаем описание товара и список всех его размеров/цветов(нужно будет в парсинге цены parse_card)
-        except Exception:
-            print("Error in parse_description")
+        except Exception as e:
+            print("Error in parse_description", e)
             return "Error in parse_description"
