@@ -102,11 +102,8 @@ class ParseFiveLastFeedback:
                         headers=headers,
                     ) as resp:
                         data = await resp.json()
-                        if feedbacks_list:
-                            feedbacks_list = data["feedbacks"]
-                            return self.get_list_of_feedback_data(nm_id, feedbacks_list)
-                        else:
-                            return [None, None, None]
+                        feedbacks_list = data["feedbacks"]
+                        return self.get_list_of_feedback_data(nm_id, feedbacks_list)
         except Exception as e:
             print("Error in parse_last_five_feedbacks_rating", str(e))
             return [None, None, None]

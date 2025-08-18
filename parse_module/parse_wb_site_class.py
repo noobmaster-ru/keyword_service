@@ -10,9 +10,11 @@ from parse_module.parsing_features.tools import Tools
 from parse_module.parsing_features.parse_feedbacks import ParseFiveLastFeedback
 from parse_module.parsing_features.parse_video import ParseVideo
 
+from parse_module.parsing_features.parse_card import ParseDataCard
+
 
 class ParseWbSiteClass(
-    ParsePrice, ParsePhoto, ParseDescription, Tools, ParseFiveLastFeedback, ParseVideo
+    ParsePrice, ParsePhoto, ParseDescription, Tools, ParseFiveLastFeedback, ParseVideo, ParseDataCard
 ):
     def __init__(self):
         self.PARAMS_PARSE_PAGE_TEMPLATE = {
@@ -50,7 +52,42 @@ class ParseWbSiteClass(
             "x-userid": "54570326",
         }
 
-    async def build_data_nm_id(
+    async def parse_data_nm_id(
+        self,
+        session: aiohttp.ClientSession,
+        nm_id: str,
+        articles: dict
+    ) -> None:
+        description, list_of_nm_ids = await self.parse_description(session, nm_id)
+
+        # но пока оно грузилось, параллельно грузились отзывы
+        feedback_task =  self.parse_last_five_feedbacks_rating(session, nm_id)
+        data_card_task = self.parse_data_card(session, nm_id)
+
+        data_card, last_five_feedbacks_rating_with_text_and_rate = await asyncio.gather(data_card_task, feedback_task)
+
+        articles[nm_id] = { 
+            "nm_id": nm_id,
+            "price": data_card["price"],
+            "nmFeedbacks": data_card["nmFeedbacks"],
+            "nmReviewRating": data_card["nmReviewRating"],
+            "five_last_feedbacks_rating": last_five_feedbacks_rating_with_text_and_rate[
+                0
+            ],
+            "text_of_last_feedback": last_five_feedbacks_rating_with_text_and_rate[
+                1
+            ],
+            "rate_of_last_feedback": last_five_feedbacks_rating_with_text_and_rate[
+                2
+            ],
+            "link": f"https://www.wildberries.ru/catalog/{nm_id}/detail.aspx",
+            "name": data_card["name"],
+            "remains": data_card["remains"],
+            "number_of_images": data_card["number_of_images"],
+            "description": description,
+        }
+
+    async def build_data_nm_id_keyword(
         self,
         session: aiohttp.ClientSession,
         product: dict,
@@ -126,7 +163,7 @@ class ParseWbSiteClass(
                 tasks = []
                 for product in products:
                     tasks.append(
-                        self.build_data_nm_id(session, product, 1, promo_position)
+                        self.build_data_nm_id_keyword(session, product, 1, promo_position)
                     )
                     promo_position += 1
                 results = await asyncio.gather(*tasks)
@@ -166,7 +203,7 @@ class ParseWbSiteClass(
                 tasks = []
                 for product in products:
                     tasks.append(
-                        self.build_data_nm_id(
+                        self.build_data_nm_id_keyword(
                             session, product, page_number, promo_position
                         )
                     )
