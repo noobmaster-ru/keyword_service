@@ -26,7 +26,11 @@ class ParseFiveLastFeedback:
                 count += 1
                 if count > 4:
                     break
-        return [summa_feedbacks_rating / count, text_of_feedbacks, rate_of_feedbacks]
+        if count == 0:
+            average_rating = 0
+        else: 
+            average_rating = summa_feedbacks_rating / count
+        return [average_rating, text_of_feedbacks, rate_of_feedbacks]
 
     async def parse_last_five_feedbacks_rating(
         self, session: aiohttp.ClientSession, nm_id: str
