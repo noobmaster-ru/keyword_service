@@ -11,24 +11,22 @@ class ParseFiveLastFeedback:
     def get_list_of_feedback_data(nm_id: str, feedbacks_list: list) -> list:
         summa_feedbacks_rating = 0
         count = 0
-        text_of_feedback = ""
-        rate_of_feedback = ""
+        text_of_feedbacks = []
+        rate_of_feedbacks = []
         for index, feedback in enumerate(feedbacks_list):
             product_valuation = feedback["productValuation"]
             feedback_nm_id = feedback["nmId"]
             if int(feedback_nm_id) == int(nm_id) and count < 5:
                 summa_feedbacks_rating += int(product_valuation)
-                if text_of_feedback == "":
-                    text_of_feedback = (
-                        feedback.get("text")
-                        or feedback.get("cons")
-                        or feedback.get("pros")
-                    )
-                    rate_of_feedback = product_valuation
+                cons = feedback.get("cons")
+                text = feedback.get("text")
+                pros = feedback.get("pros")
+                text_of_feedbacks.append([pros,text,cons])
+                rate_of_feedbacks.append(product_valuation)
                 count += 1
                 if count > 4:
                     break
-        return [summa_feedbacks_rating / 5, text_of_feedback, rate_of_feedback]
+        return [summa_feedbacks_rating / count, text_of_feedbacks, rate_of_feedbacks]
 
     async def parse_last_five_feedbacks_rating(
         self, session: aiohttp.ClientSession, nm_id: str

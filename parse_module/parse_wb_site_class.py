@@ -64,22 +64,20 @@ class ParseWbSiteClass(
         feedback_task =  self.parse_last_five_feedbacks_rating(session, nm_id)
         data_card_task = self.parse_data_card(session, nm_id)
 
-        data_card, last_five_feedbacks_rating_with_text_and_rate = await asyncio.gather(data_card_task, feedback_task)
+        data_card, data_feedbacks = await asyncio.gather(data_card_task, feedback_task)
 
         articles[nm_id] = { 
             "nm_id": nm_id,
             "price": data_card["price"],
             "nmFeedbacks": data_card["nmFeedbacks"],
             "nmReviewRating": data_card["nmReviewRating"],
-            "five_last_feedbacks_rating": last_five_feedbacks_rating_with_text_and_rate[
-                0
-            ],
-            "text_of_last_feedback": last_five_feedbacks_rating_with_text_and_rate[
-                1
-            ],
-            "rate_of_last_feedback": last_five_feedbacks_rating_with_text_and_rate[
-                2
-            ],
+            "five_last_feedbacks_rating": data_feedbacks[0],
+            "text_of_last_feedbacks": {
+                f"feedback_{i+1}": text for i, text in enumerate(data_feedbacks[1])
+            },
+            "rate_of_last_feedbacks": {
+                f"rate_{i+1}": rate for i, rate in enumerate(data_feedbacks[2])
+            },
             "link": f"https://www.wildberries.ru/catalog/{nm_id}/detail.aspx",
             "name": data_card["name"],
             "remains": data_card["remains"],
@@ -108,7 +106,7 @@ class ParseWbSiteClass(
 
             # но пока оно грузилось, параллельно грузились отзывы
             price_task = self.fetch_price(session, nm_id, list_of_nm_ids)
-            price, last_five_feedbacks_rating_with_text_and_rate = await asyncio.gather(price_task, feedback_task)
+            price, data_feedbacks = await asyncio.gather(price_task, feedback_task)
 
             return {
                 "nm_id": product["id"],
@@ -117,15 +115,17 @@ class ParseWbSiteClass(
                 "price": price,
                 "nmFeedbacks": product.get("nmFeedbacks"),
                 "nmReviewRating": product.get("nmReviewRating"),
-                "five_last_feedbacks_rating": last_five_feedbacks_rating_with_text_and_rate[
-                    0
-                ],
-                "text_of_last_feedback": last_five_feedbacks_rating_with_text_and_rate[
-                    1
-                ],
-                "rate_of_last_feedback": last_five_feedbacks_rating_with_text_and_rate[
-                    2
-                ],
+                "five_last_feedbacks_rating": data_feedbacks[0],
+                "text_of_last_feedbacks": {
+                    f"feedback_{i+1}": {
+                        "cons": text[0],
+                        "text": text[1],
+                        "pros": text[2]
+                    } for i, text in enumerate(data_feedbacks[1])
+                },
+                "rate_of_last_feedbacks": {
+                    f"rate_{i+1}": rate for i, rate in enumerate(data_feedbacks[2])
+                },
                 "page": int(page_number),
                 "link": f"https://www.wildberries.ru/catalog/{nm_id}/detail.aspx",
                 "name": product.get("name"),
